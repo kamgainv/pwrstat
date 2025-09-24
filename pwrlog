@@ -1,0 +1,23 @@
+#!/bin/bash
+path="/sys/devices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:47/PNP0C09:00/PNP0C0A:00/power_supply/BAT0"
+battery=$(cat $path/capacity)
+
+statusn="$(cat $path/status)"
+if [ "$statusn" = "Discharging" ]; then
+	statusbool=0
+else
+	statusbool=1
+fi
+
+time=$(date +"%H:%M")
+
+power=$(cat $path/power_now)
+power=$(echo "scale=2; $power/1000000" | bc)
+
+session=""
+pgrep -x sway >/dev/null && session="${session}sway+"
+pgrep -x plasmashell >/dev/null && session="${session}plasma+"
+pgrep -x ollama >/dev/null && session="${session}ollama+"
+session="${session%+}"
+
+printf "%d,%d,%0.2f,%s,%s\n" "$battery" "$statusbool" "$power" "$session" "$time"
