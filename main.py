@@ -3,57 +3,62 @@ import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 
+def spikecount(series):
+    """
+    Counts the amount of spikes in a series
+    """
+    q1 = series.quantile(0.25)
+    q3 = series.quantile(0.75)
+    iqr = q3 - q1
+    return len(series[series > q3 + 1.5 * iqr])
+def sub5freq(series):
+    return int(100*len(series[series < 5])/len(series))
+def hyp10freq(series):
+    return int(100*len(series[series > 10])/len(series))
+
 
 def main():
-    pcs = ["ollama", "sway", "plasma"]
+    #loads the dataframe
     OGdf = pd.read_csv("./log.csv")
-    dc_df = OGdf[OGdf["charging"] == 0]
-    dc_df = dc_df.copy()
-    dc_df["session_list"] = dc_df["session"].fillna(" ").str.split("+").apply(sorted)
-    dc_df["session_tuple"] = dc_df["session_list"].apply(tuple)
-    results = {}
-    for combo, df in dc_df.groupby("session_tuple"):
-        smp_sz = len(df)
-        if smp_sz < 5:
-            continue
-        comboname = df["session"].iloc[1]
-        pwr = df["power"]
-        # simple calculations
-        mean = pwr.mean()
-        mdn = pwr.median()
-        std = pwr.std()
-        q1 = pwr.quantile(0.25)
-        q3 = pwr.quantile(0.75)
-        iqr = q3 - q1
-        spks = len(df[pwr > q3 + 1.5 * iqr])
-        spkfreq = int(100 * spks / smp_sz)
-        sub5freq = int((len(df[df["power"] < 5]) / smp_sz) * 100)
-        hyp10freq = int((len(df[df["power"] > 10]) / smp_sz) * 100)
-        print(
-            f"for combo: {comboname},\nsample size: {smp_sz}\nmean: {mean},\nmedian:{mdn}\nstandard deviation:{std}\nAmount of spikes: {spks}({spkfreq}%) \nsub5W frequency: {sub5freq}%\nover 10W frequency: {hyp10freq}%\n"
-        )
-        results[comboname] = {
-            "smp_sz": smp_sz,
-            "mean": mean,
-            "mdn": mdn,
-            "std": std,
-            "q1": q1,
-            "q3": q3,
-            "iqr": iqr,
-            "spks": spks,
-            "spkfreq": spkfreq,
-            "sub5freq": sub5freq,
-        }
+    #filters out rows that are recording during charging, because the W reading is off in these cases
+    df = OGdf[OGdf["charging"] == 0]
+    df = df.copy()
+    df["session"] = df["session"].fillna("No process")
+    #allows to unify each combo of applications into a tuple
+    # df["session_list"] = df["session"].fillna(" ").str.split("+").apply(sorted)
+    # df["session_tuple"] = df["session_list"].apply(tuple)
+    #filters out combos with less than 5 entries
+    counts = df["session"].value_counts()
+    df = df[df["session"].isin(counts[counts >= 5].index)]
 
-        ##graphing
-        # plt.plot(df["time"], df["power"])
-        # plt.xlabel("Time")
-        # plt.ylabel("Power (W)")
-        # plt.title(f"Power Usage Over Time for the combo: {combo}")
-        # plt.grid(True)
-        # plt.tight_layout()
-        # plt.show()
+    #calculates stats such as average, median etc...
+    cs = df.groupby("session")["power"].agg(["count", "mean", "median", "std", spikecount, sub5freq, hyp10freq]).reset_index()
+    print(cs)
 
+    #graphing
+    plt.bar(cs["session"], cs["median"])
+    plt.xlabel("session combo")
+    plt.ylabel("median power consumption")
+    plt.title(f"median power consumption per session combo")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    plt.bar(cs["session"], cs["sub5freq"])
+    plt.xlabel("session combo")
+    plt.ylabel("under 5W usage frequency")
+    plt.title(f"under 5W usage frequency per session combo")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    plt.bar(cs["session"], cs["hyp10freq"])
+    plt.xlabel("session combo")
+    plt.ylabel("over 10W usage frequency")
+    plt.title(f"over 10W usage frequency per session combo")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     main()
