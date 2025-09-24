@@ -13,9 +13,23 @@
 
 To monitor your own system:
 
-1. Clone the repo and inspect `log.csv` for a demo.
-2. Set up a cronjob or systemd timer to run the logging script every minute.
-3. Analyze the logs with the included pandas pipeline or build your own.
+#### 1. Clone the repo and inspect `log.csv` for a demo.
+#### 2. Set up a cronjob or systemd timer to run the logging script every minute.
+Example for cronie:
+```bash
+crontab -e
+```
+this opens your favorite editor, just add:
+```
+*/1 * * * * /path/to/the/repo/pwrlog >> /path/to/the/repo/log.csv
+```
+You can then run
+```
+crontab -l
+```
+to check what it looks like and if it worked.  
+  
+#### 3. Analyze the logs with the included pandas pipeline or build your own.
 
 The logging script is tailored to my setup:
 - Lenovo ThinkPad P14s

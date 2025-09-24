@@ -1,23 +1,25 @@
 #!/bin/bash
-path="/sys/devices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:47/PNP0C09:00/PNP0C0A:00/power_supply/BAT0"
-battery=$(cat $path/capacity)
+#Indicate the path to the battery status directory. this only works for my setup, you NEED to adapt this. The default path on most linux distros is /sys/class/power_supply/BAT0/, feel free to try if it works for you.
+BAT0PATH="/sys/devices/LNXSYSTM:00/LNXSYBUS:00/PNP0A08:00/device:47/PNP0C09:00/PNP0C0A:00/power_supply/BAT0"
+# BAT0PATH="/sys/class/power_supply/BAT0/"
 
-statusn="$(cat $path/status)"
+battery=$(cat $BAT0PATH/capacity)
+statusn="$(cat $BAT0PATH/status)"
 if [ "$statusn" = "Discharging" ]; then
 	statusbool=0
 else
 	statusbool=1
 fi
-
 time=$(date +"%H:%M")
-
-power=$(cat $path/power_now)
+power=$(cat $BAT0PATH/power_now)
 power=$(echo "scale=2; $power/1000000" | bc)
 
 session=""
-pgrep -x sway >/dev/null && session="${session}sway+"
-pgrep -x plasmashell >/dev/null && session="${session}plasma+"
-pgrep -x ollama >/dev/null && session="${session}ollama+"
+#This is the array that contains all the processes you want to monitor. if you want to add one make sure to spell it right as pgrep matches exactly.
+pcs=("sway plasma ollama")
+for pc in $pcs; do
+	pgrep -f "$pc" >/dev/null && session="${session}$pc+"
+done
 session="${session%+}"
 
 printf "%d,%d,%0.2f,%s,%s\n" "$battery" "$statusbool" "$power" "$session" "$time"
