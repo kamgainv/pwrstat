@@ -31,6 +31,7 @@ def main():
     counts = df["session"].value_counts()
     df = df[df["session"].isin(counts[counts >= 5].index)]
 
+    df["hour"] = pd.to_datetime(df["time"], format="%H:%M").dt.hour
     #calculates stats such as average, median etc...
     cs = df.groupby("session")["power"].agg(["count", "mean", "median", "std", spikecount, sub5freq, hyp10freq]).reset_index()
     print(cs)
@@ -59,6 +60,16 @@ def main():
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+    hrmdn = df.groupby("hour")["power"].median()
+    plt.bar(hrmdn.index, hrmdn.values)
+    plt.xlabel("time")
+    plt.ylabel("median power consumption")
+    plt.title(f"median poewr consumption throughout the day")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
