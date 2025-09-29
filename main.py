@@ -37,39 +37,56 @@ def main():
     print(cs)
 
     #graphing
-    plt.bar(cs["session"], cs["median"])
-    plt.xlabel("session combo")
-    plt.ylabel("median power consumption")
-    plt.title(f"median power consumption per session combo")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
 
-    plt.bar(cs["session"], cs["sub5freq"])
-    plt.xlabel("session combo")
-    plt.ylabel("under 5W usage frequency")
-    plt.title(f"under 5W usage frequency per session combo")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-    plt.bar(cs["session"], cs["hyp10freq"])
-    plt.xlabel("session combo")
-    plt.ylabel("over 10W usage frequency")
-    plt.title(f"over 10W usage frequency per session combo")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-    hrmdn = df.groupby("hour")["power"].median()
-    plt.bar(hrmdn.index, hrmdn.values)
-    plt.xlabel("time")
-    plt.ylabel("median power consumption")
-    plt.title(f"median poewr consumption throughout the day")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
+    GRAPHS = ["mdnpwr/sesh", "sub5/sesh","hyp10/sesh","spkfr/sesh","draw/time"]
+    graph_params = {
+            "mdnpwr/sesh": {
+                "x":cs["session"],
+                "y":cs["median"],
+                "xlabel":"session combo",
+                "ylabel":"median power consumption",
+                "title":"median power consumption per session combo"
+            },
+            "sub5/sesh": {
+                "x":cs["session"],
+                "y":cs["sub5freq"],
+                "xlabel":"session combo",
+                "ylabel":"under 5W draw frequency",
+                "title":"under 5W draw frequency per session combo"
+            },
+            "hyp10/sesh": {
+                "x":cs["session"],
+                "y":cs["hyp10freq"],
+                "xlabel":"session combo",
+                "ylabel":"over 10W draw frequency",
+                "title":"over 10W draw frequency per session combo"
+            },
+            "spkfr/sesh": {
+                "var":100*cs["spikecount"]/cs["count"],
+                "x":cs["session"],
+                "y":100*cs["spikecount"]/cs["count"],
+                "xlabel":"session combo",
+                "ylabel":"spike frequency",
+                "title":"spike frequency per session combo"
+            },
+            "draw/time": {
+                "var":df.groupby("hour")["power"].median(),
+                "x":df.groupby("hour")["power"].median().index,
+                "y":df.groupby("hour")["power"].median().values,
+                "xlabel":"time",
+                "ylabel":"median power consumption",
+                "title":"median power consumption throughout the day"
+            },
+            }
+    for graph in GRAPHS:
+        pars = graph_params[graph]
+        plt.bar(pars["x"], pars["y"])
+        plt.xlabel(pars["xlabel"])
+        plt.ylabel(pars["ylabel"])
+        plt.title(pars["title"])
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
 if __name__ == "__main__":
     main()
